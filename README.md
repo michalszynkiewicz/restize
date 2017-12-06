@@ -1,6 +1,8 @@
 # Restize
 This is an attempt to provide a readable, easy to use 
-java api to define restful interfaces.
+java api to define restful interfaces, inspired by the Spray framework
+(now akka-http).
+
 It's written in pure Java on top of Undertow.
 
 Take a look at the tests for examples of usage.
