@@ -37,4 +37,13 @@ public class Request {
     public String queryParam(String paramName) {
         return exchange.queryParam(paramName);
     }
+
+    public <Input> Input parseTo(Class<Input> inputClass) {
+        return null;  // TODO: Customise this generated block
+    }
+
+    public static Request fromExchangeAsync(RestizeExchange exchange) {
+        exchange.detach();
+        return null;  // TODO: Customise this generated block
+    }
 }

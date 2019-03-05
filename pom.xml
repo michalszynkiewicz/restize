@@ -11,8 +11,9 @@
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <undertow.version>1.4.21.Final</undertow.version>
+    <undertow.version>1.4.22.Final</undertow.version>
     <resteasy.version>3.0.11.Final</resteasy.version>
+    <junit-platform.version>1.0.2</junit-platform.version>
   </properties>
 
   <dependencies>
@@ -32,11 +33,10 @@
       <version>${undertow.version}</version>
     </dependency>
 
-
     <dependency>
       <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-launcher</artifactId>
-      <version>1.0.2</version>
+      <version>${junit-platform.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -52,21 +52,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.jboss.resteasy</groupId>
-      <artifactId>resteasy-jaxrs</artifactId>
-      <version>${resteasy.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.resteasy</groupId>
-      <artifactId>resteasy-client</artifactId>
-      <version>${resteasy.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.resteasy</groupId>
-      <artifactId>resteasy-jackson2-provider</artifactId>
-      <version>${resteasy.version}</version>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.4</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -77,16 +65,46 @@
     </dependency>
   </dependencies>
 
+  <profiles>
+    <profile>
+      <id>perf-test</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.19</version>
+            <configuration>
+              <properties>
+                <includeTags>perf</includeTags>
+              </properties>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-surefire-provider</artifactId>
+                <version>${junit-platform.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
   <build>
     <plugins>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.19</version>
+        <configuration>
+          <properties>
+            <excludeTags>perf</excludeTags>
+          </properties>
+        </configuration>
         <dependencies>
           <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-surefire-provider</artifactId>
-            <version>1.0.2</version>
+            <version>${junit-platform.version}</version>
           </dependency>
         </dependencies>
       </plugin>

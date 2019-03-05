@@ -8,7 +8,7 @@ It's written in pure Java on top of Undertow.
 Take a look at the tests for examples of usage.
 
 ## TODO
-- other method types (for now only GET is supported)
+- setting response codes
 - json support
 - setting headers
 - support user-defined flow elements

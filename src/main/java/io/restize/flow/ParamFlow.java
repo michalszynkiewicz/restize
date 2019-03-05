@@ -18,7 +18,7 @@ public class ParamFlow extends Flow {
 
     @Override
     public <T> void execute(RestizeExchange exchange) {
-        String value = exchange.consumeUntil('/');
+        String value = exchange.consumePathUntil('/');
         exchange.pathParam(paramName, value);
         super.execute(exchange);
     }

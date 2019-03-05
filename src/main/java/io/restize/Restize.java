@@ -1,9 +1,14 @@
 package io.restize;
 
+import io.restize.async.ForkJoinThreadFactory;
 import io.restize.flow.Flow;
 import io.restize.flow.RootFlow;
 import io.undertow.Undertow;
 import io.undertow.server.HttpServerExchange;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * mstodo: Header
@@ -14,16 +19,34 @@ import io.undertow.server.HttpServerExchange;
  */
 public class Restize {
     public static Restize create() {
-        return new Restize();
+        return new Restize(Integer.max(Runtime.getRuntime().availableProcessors(), 2), 20);
+    }
+
+    public static Restize create(int ioThreads, int forkJoinPoolSize) {
+        return new Restize(ioThreads, forkJoinPoolSize);
     }
 
     private Undertow server;
+    private final Flow flow;
 
-    public Restize() {
+    private final int ioThreads;
+    private final Executor asyncTasksPool;
+
+    public Restize(int ioThreads, int forkJoinPoolSize) {
         flow = new RootFlow();
+        this.ioThreads = ioThreads;
+        this.asyncTasksPool = Executors.newFixedThreadPool(10);
+//                n
+
+//        ew ForkJoinPool(
+//                forkJoinPoolSize,
+//                new ForkJoinThreadFactory("async-tasks-"),
+//                null,
+//                true
+//        );
+
     }
 
-    private final Flow flow;
 
     public void start() {
         start(8406);
@@ -33,6 +56,9 @@ public class Restize {
         long start = System.currentTimeMillis();
         server = Undertow.builder()
                 .addHttpListener(port, "0.0.0.0") // TODO customize the host
+                .setWorkerThreads(4)             // todo expose customization options
+//                .setWorkerThreads(workerThreads)             // todo expose customization options
+                .setIoThreads(Math.max(ioThreads, 1))
                 .setHandler(this::httpHandler).build();
         server.start();
         // todo some logging framework
@@ -40,7 +66,8 @@ public class Restize {
     }
 
     private void httpHandler(HttpServerExchange exchange) {
-        RestizeExchange restizeExchange = new RestizeExchange(exchange, exchange.getRelativePath());
+        RestizeExchange restizeExchange =
+                new RestizeExchange(exchange, exchange.getRelativePath(), asyncTasksPool);
         flow.execute(restizeExchange);
     }
 

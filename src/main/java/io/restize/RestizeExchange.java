@@ -5,10 +5,16 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.HttpString;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * @author Michal Szynkiewicz, michal.l.szynkiewicz@gmail.com
@@ -16,28 +22,33 @@ import java.util.Map;
  * Date: 12/6/17
  */
 public class RestizeExchange {
-    public final HttpServerExchange exchange;
-    public char path[];
+    public final HttpServerExchange undertowExchange;
+    public final char path[];
+
+    public final Executor asyncPool;
     private int pathPosition = 0;
     private Map<String, String> pathParams = new HashMap<>();
+    private byte[] content;
 
-    public RestizeExchange(HttpServerExchange exchange,
-                           String path) {
-        this.exchange = exchange;
+    public RestizeExchange(HttpServerExchange undertowExchange,
+                           String path,
+                           Executor asyncPool) {
+        this.undertowExchange = undertowExchange;
         this.path = path.toCharArray();
+        this.asyncPool = asyncPool;
     }
 
     public RestizeExchange statusCode(int statusCode) {
-        this.exchange.setStatusCode(statusCode);
+        this.undertowExchange.setStatusCode(statusCode);
         return this;
     }
 
     public Sender responseSender() {
-        return exchange.getResponseSender();
+        return undertowExchange.getResponseSender();
     }
 
     public HeaderMap responseHeaders() {
-        return exchange.getResponseHeaders();
+        return undertowExchange.getResponseHeaders();
     }
 
     public String path() {
@@ -45,11 +56,11 @@ public class RestizeExchange {
     }
 
     public HeaderMap requestHeaders() {
-        return exchange.getRequestHeaders();
+        return undertowExchange.getRequestHeaders();
     }
 
     public HttpString method() {
-        return exchange.getRequestMethod();
+        return undertowExchange.getRequestMethod();
     }
 
     /*
@@ -85,7 +96,7 @@ public class RestizeExchange {
         return path.length > pathPosition;
     }
 
-    public String consumeUntil(char character) {
+    public String consumePathUntil(char character) {
         StringBuilder result = new StringBuilder();
         for (; pathPosition < path.length; pathPosition++) {
             if (path[pathPosition] == character) {
@@ -106,7 +117,7 @@ public class RestizeExchange {
     }
 
     public String queryParam(String paramName) {
-        Deque<String> values = exchange.getQueryParameters().get(paramName);
+        Deque<String> values = undertowExchange.getQueryParameters().get(paramName);
 
         if (values.size() > 1) {
             // mstodo bettere xceptions!
@@ -116,6 +127,32 @@ public class RestizeExchange {
     }
 
     public Collection<String> queryParams(String paramName) {
-        return exchange.getQueryParameters().get(paramName);
+        return undertowExchange.getQueryParameters().get(paramName);
+    }
+
+    public void detach() {
+        undertowExchange.startBlocking();
+        InputStream inputStream = undertowExchange.getInputStream();
+        content = readToBytes(inputStream);
+    }
+
+    private byte[] readToBytes(InputStream inputStream) {
+        ByteArrayOutputStream contentStream = new ByteArrayOutputStream();
+        int read;
+        byte buffer[] = new byte[4096];
+        try {
+            while ((read = inputStream.read(buffer)) > -1) {
+                contentStream.write(buffer, 0, read);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("oops, error reading stream", e);
+        }
+        return contentStream.toByteArray();
+    }
+
+    public InputStream getContent() {
+        return content == null
+                ? undertowExchange.getInputStream()
+                : new ByteArrayInputStream(content);
     }
 }

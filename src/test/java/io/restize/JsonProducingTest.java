@@ -1,5 +1,10 @@
 package io.restize;
 
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.fail;
+
 /**
  * mstodo: Header
  *
@@ -7,5 +12,10 @@ package io.restize;
  * <br>
  * Date: 12/6/17
  */
+@Disabled
 public class JsonProducingTest {
+    @Test
+    public void shouldProduceJson() {
+        fail("not implemented");
+    }
 }

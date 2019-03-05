@@ -25,4 +25,16 @@ public class Flows {
     public static Flow param(String paramName) {
         return new ParamFlow(paramName);
     }
+
+    public static Flow post() {
+        return new MethodFlow(new HttpString("POST"));
+    }
+
+    public static Flow put() {
+        return new MethodFlow(new HttpString("PUT"));
+    }
+
+    public static Flow delete() {
+        return new MethodFlow(new HttpString("DELETE"));
+    }
 }

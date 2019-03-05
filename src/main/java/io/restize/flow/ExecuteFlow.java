@@ -13,7 +13,7 @@ import java.util.function.Function;
  * <br>
  * Date: 12/6/17
  */
-public class ExecuteFlow<T> extends Flow {
+public class ExecuteFlow<T> extends TerminalFlow {
 
     private final Function<Request, T> handle;
 
@@ -21,30 +21,6 @@ public class ExecuteFlow<T> extends Flow {
         this.handle = handle;
     }
 
-    @Override
-    public Flow get() {
-        return notAllowed();
-    }
-
-    @Override
-    public Flow header(String name, String value) {
-        return notAllowed();
-    }
-
-    @Override
-    public Flow path(String path) {
-        return notAllowed();
-    }
-
-    @Override
-    public <V> Flow handle(Function<Request, V> handle) {
-        return notAllowed();
-    }
-
-    @Override
-    protected boolean matches(RestizeExchange exchange) {
-        return true;
-    }
 
     @Override
     public void execute(RestizeExchange exchange) {
@@ -54,9 +30,7 @@ public class ExecuteFlow<T> extends Flow {
         exchange.responseHeaders().add(new HttpString("Content-Type"), "application/json");
         //  mstodo!!! :
         exchange.responseSender().send(result.toString());
+        exchange.responseSender().close();
     }
 
-    private <V> V notAllowed() {
-        throw new IllegalStateException("handle() is the final element of the flow");
-    }
 }

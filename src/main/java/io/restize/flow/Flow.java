@@ -1,10 +1,12 @@
 package io.restize.flow;
 
 import io.restize.Request;
+import io.restize.Response;
 import io.restize.RestizeExchange;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -33,29 +35,46 @@ public abstract class Flow {
         return subFlow(Flows.path(path));
     }
 
+    public Flow post() {
+        return subFlow(Flows.post());
+    }
+
+    public Flow put() {
+        return subFlow(Flows.put());
+    }
+
+    public Flow delete() {
+        return subFlow(Flows.delete());
+    }
+
     private Flow subFlow(Flow subFlow) {
         children.add(subFlow);
         subFlow.parent = this;
         return subFlow;
     }
 
-    public <T> Flow handle(Function<Request, T> handle) {
-        return subFlow(new ExecuteFlow<T>(handle));
-//                (path, exchange -> {
-//            Request request = Request.fromExchange(exchange);
-//            handle.apply(request);
-//        });
+    public <Input, Output> Flow handle(Class<Input> entityClass, Function<Input, Output> handleFunction) {
+        return subFlow(new ExecuteFlow<>(request -> handleFunction.apply(request.parseTo(entityClass))));
     }
+
+    public <T> Flow handle(Function<Request, T> handle) {
+        return subFlow(new ExecuteFlow<>(handle));
+    }
+
     public <T> Flow handle(Supplier<T> handle) {
         return subFlow(new ExecuteFlow<T>(request -> handle.get()));
     }
 
+    public Flow handleDetached(BiConsumer<Request, Response> handler) {
+        return subFlow(new DetachedExecuteFlow(handler));
+    }
+
     public <T> void execute(RestizeExchange exchange) {
-        children.stream()
+        Flow child = children.stream()
                 .filter(f -> f.matches(exchange))
                 .findFirst()
-                .orElse(WrongFlow.instance)
-                .execute(exchange);
+                .orElse(WrongFlow.instance);
+        child.execute(exchange);
     }
 
     protected abstract boolean matches(RestizeExchange exchange);
